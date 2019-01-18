@@ -7,6 +7,7 @@ from pathlib import Path
 
 
 from ocra.exceptions import ExtensionNotAvailableError
+import ocra
 
 class DocAcceptor(object):
     """
@@ -24,15 +25,16 @@ class DocAcceptor(object):
 
     @classmethod
     def extract_document(cls, document_path):
-        document_Path = self.wrap_to_pathlib(document_path)
-        self.isFileExists(document_Path)
-        ext = self.validate_ext(self.get_ext(document_Path))
-        return getattr('ocra.typedocs', ext.capitalize())(document_Path)
+        document_Path = cls.wrap_to_pathlib(document_path)
+        cls.isFileExists(document_Path)
+        ext = cls.validate_ext(cls.get_ext(document_Path))
+        return getattr(ocra.typedocs, ext.capitalize())(document_Path).read_lines()
 
-    def validate_ext(self, ext):
-        if ext not in self.available_ext:
+    @classmethod
+    def validate_ext(cls, ext):
+        if ext not in cls.available_ext:
             raise ExtensionNotAvailableError(
-                    'This extension {} is not available. Select from {}'.format(self.available_ext)
+                    'This extension {} is not available. Select from {}'.format(cls.available_ext)
                     )
         else:
             return ext
@@ -50,3 +52,6 @@ class DocAcceptor(object):
         if not document_Path.exists():
             raise FileNotFoundError()
 
+if __name__ == '__main__':
+    acceptor = DocAcceptor.extract_document('/home/mzntaka0/Dropbox/work/oss/ocra/tests/data/mock.txt')
+    print(acceptor)

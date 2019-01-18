@@ -15,6 +15,10 @@ class Txt(basedoc.Basedoc):
     def __init__(self, document_Path):
         self._doc_path = document_Path
 
-    def read_lines(self, document_Path):
-        pass
+    def read_lines(self):
+        with open(str(self._doc_path), 'r') as f:
+            docs = f.read().split('\n')
+            docs.remove('')
+        return docs
+
 
