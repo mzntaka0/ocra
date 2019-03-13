@@ -1,12 +1,11 @@
 # -*- coding: utf-8 -*-
 """
 """
-import os
+from pathlib import Path
 import glob
+import os
 import subprocess
 import tempfile
-from pathlib import Path
-from bpdb import set_trace
 
 import xmltodict
 
@@ -14,11 +13,10 @@ from ocra.typedocs import basedoc
 from ocra.exceptions import PageNotFoundError
 
 
-
-
 class Pdf(basedoc.Basedoc):
     """
     PDF object to do text extraction.
+    This class is dependent on XMLPDF class.
 
     Args:
         - document_Path(pathlib.Path): Path of pdf.
@@ -28,6 +26,7 @@ class Pdf(basedoc.Basedoc):
         self.tempdir = tempfile.TemporaryDirectory()
         self.document_Path = self._validate_Path(document_Path)
         self.xmlpdf = self.init()
+        self._counter = 0
 
     def read_lines(self, raw=False):
         if raw:
@@ -53,16 +52,32 @@ class Pdf(basedoc.Basedoc):
         input:
             - page_num(int): index of page
 
+        return:
+            - text_in_page(dict): Texts information in the specified page.
+            - image_Path(pathlib.Path): Path for image of specified page.
         """
-        page_num -= 1
-        try:
-            page = self.xmlpdf.pages[page_num]
-            texts_in_page = self.xmlpdf._extract_text(page)
-            images = self._get_images()
-            image = images[page_num]
-        except IndexError:
+        if not 1 <= page_num <= len(self.xmlpdf):
             raise PageNotFoundError('This page number [{}] is out of range. Select from 1 <= page < {} for this document.'.format(page_num, len(self.xmlpdf)))
-        return texts_in_page, image
+        page_num -= 1
+        page = self.xmlpdf.pages[page_num]
+        texts_in_page = self.xmlpdf._extract_text(page)
+        images = self._get_images()
+        image_Path = Path(images[page_num])
+        return texts_in_page, image_Path
+
+    def __iter__(self):
+        return self
+
+    def __next__(self):
+        if self._counter >= len(self.xmlpdf):
+            self._counter = 0
+            raise StopIteration()
+        page = self.xmlpdf.pages[self._counter]
+        texts_in_page = self.xmlpdf._extract_text(page)
+        images = self._get_images()
+        image_Path = Path(images[self._counter])
+        self._counter += 1
+        return texts_in_page, image_Path
 
     def pdf2xml(self):
         output_path = os.path.join(self.tempdir.name, self.document_Path.stem + '.xml')
@@ -174,10 +189,8 @@ class XMLPDF(object):
                     ]}
 
 
-
 if __name__ == '__main__':
     document_Path = Path('../../../../git/pdf2xml-viewer/00.pdf')
     pdf = Pdf(document_Path)
     texts = pdf.read_lines()
     print(texts)
-    print(pdf[26])

@@ -6,11 +6,12 @@ import os
 import sys
 
 
-class ResponseParser(object):
+class TextAnnotationsParser(object):
 
-    def __init__(self, response):
-        self.response = response
+    def __init__(self, textAnnotations):
+        self.textAnnotations = textAnnotations
 
-    def __getitem__(self):
-        pass
-
+    def __getitem__(self, idx):
+        coords = None
+        text = None
+        return coords, text
