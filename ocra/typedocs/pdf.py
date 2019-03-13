@@ -3,8 +3,9 @@
 """
 import os
 import subprocess
+import tempfile
 from pathlib import Path
-import xml.etree.ElementTree as ET
+from bpdb import set_trace
 
 from ocra.typedocs import basedoc
 import xmltodict
@@ -19,24 +20,34 @@ class Pdf(basedoc.Basedoc):
     """
 
     def __init__(self, document_Path):
+        self.tempdir = tempfile.TemporaryDirectory()
         self.document_Path = self._validate_Path(document_Path)
 
     def read_lines(self, raw=False):
         xml_Path = self.pdf2xml()
+        self.pdf2img()
         xmlpdf = XMLPDF(xml_Path)
         if raw:
             return xmlpdf.raw_texts
         return xmlpdf.texts
 
+    def __del__(self):
+        self.tempdir.cleanup()
+
+    def pixelize(self):
+        pass
+
     def pdf2xml(self):
-        output_path = os.path.splitext(str(self.document_Path))[0] + '.xml'
-        cmd = 'pdftohtml -c -hidden -xml {} {}'.format(str(self.document_Path), output_path)
+        output_path = os.path.join(self.tempdir.name, self.document_Path.stem + '.xml')
+        cmd = 'pdftohtml -c -hidden -nodrm -xml {} {}'.format(str(self.document_Path), output_path)
         subprocess.call(cmd, shell=True)
         return Path(output_path)
 
-    def _read_xml(self, xml_Path):
-        tree = ET.parse(str(xml_Path))
-        return tree
+    def pdf2img(self):
+        output_path = os.path.join(self.tempdir.name, self.document_Path.stem)
+        cmd = 'pdftocairo -png {} {}'.format(str(self.document_Path), output_path)
+        subprocess.call(cmd, shell=True)
+        set_trace()
 
     def _validate_Path(self, path):
         return Path(path)
@@ -74,15 +85,15 @@ class XMLPDF(object):
         self._pages = self.dictpdf['pdf2xml']['page']
 
     def _extract_text(self):
-        p_texts = list(map(lambda x: x['text'], self.pages))
+        p_texts = [x['text'] for x in self.pages if 'text' in x.keys()]
         _texts = list()
         _raw_texts = list()
         for pt in p_texts:
             _texts.extend([{
                 'boundingPoly': self._get_poly(t),
                 'description': t['#text']
-            } for t in pt])
-            _raw_texts.extend([t['#text'] for t in pt])
+            } for t in pt if '#text' in t.keys()])
+            _raw_texts.extend([t['#text'] for t in pt if '#text' in t.keys()])
         self._texts = _texts
         self._raw_texts = _raw_texts
 

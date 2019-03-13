@@ -18,9 +18,9 @@ class Basedoc(object, metaclass=ABCMeta):
             - recognize each lines
             - get words in each lines and coordinate from docs
             - return list which includs words and coordinate of each lines
-
-        Input
-        ----------
-            - document_Path (Path): document Path
         """
+        pass
+
+    @abstractmethod
+    def pixelize(self):
         pass

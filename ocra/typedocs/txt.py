@@ -1,10 +1,10 @@
 # -*- coding: utf-8 -*-
 """
 """
-import os
-
+from pathlib import Path
 
 from ocra.typedocs import basedoc
+
 
 class Txt(basedoc.Basedoc):
     """
@@ -13,7 +13,7 @@ class Txt(basedoc.Basedoc):
     """
 
     def __init__(self, document_Path):
-        self._doc_path = document_Path
+        self._doc_path = self._validate_Path(document_Path)
 
     def read_lines(self):
         with open(str(self._doc_path), 'r') as f:
@@ -21,4 +21,8 @@ class Txt(basedoc.Basedoc):
             docs.remove('')
         return docs
 
+    def pixelize(self):
+        pass
 
+    def _validate_Path(self, path):
+        return Path(path)

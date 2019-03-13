@@ -3,7 +3,6 @@
 """
 from pathlib import Path
 
-
 from ocra.exceptions import ExtensionNotAvailableError
 import ocra
 
@@ -23,7 +22,7 @@ class Document(object):
         pass
 
     @classmethod
-    def extract_text(cls, document_path):
+    def load(cls, document_path):
         document_Path = cls.wrap_to_pathlib(document_path)
         cls.isFileExists(document_Path)
         ext = cls.validate_ext(cls.get_ext(document_Path))
@@ -53,5 +52,5 @@ class Document(object):
 
 
 if __name__ == '__main__':
-    acceptor = Document.extract_text('/home/mzntaka0/Dropbox/work/oss/ocra/tests/data/mock.pdf')
-    print(acceptor.read_lines())
+    document = Document.load('/home/mzntaka0/Dropbox/work/oss/ocra/tests/data/mock.pdf')
+    print(document.read_lines())
