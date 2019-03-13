@@ -20,7 +20,3 @@ class Basedoc(object, metaclass=ABCMeta):
             - return list which includs words and coordinate of each lines
         """
         pass
-
-    @abstractmethod
-    def pixelize(self):
-        pass

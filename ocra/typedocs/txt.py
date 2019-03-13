@@ -21,8 +21,5 @@ class Txt(basedoc.Basedoc):
             docs.remove('')
         return docs
 
-    def pixelize(self):
-        pass
-
     def _validate_Path(self, path):
         return Path(path)

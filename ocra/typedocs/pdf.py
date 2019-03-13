@@ -2,13 +2,18 @@
 """
 """
 import os
+import glob
 import subprocess
 import tempfile
 from pathlib import Path
 from bpdb import set_trace
 
-from ocra.typedocs import basedoc
 import xmltodict
+
+from ocra.typedocs import basedoc
+from ocra.exceptions import PageNotFoundError
+
+
 
 
 class Pdf(basedoc.Basedoc):
@@ -22,20 +27,42 @@ class Pdf(basedoc.Basedoc):
     def __init__(self, document_Path):
         self.tempdir = tempfile.TemporaryDirectory()
         self.document_Path = self._validate_Path(document_Path)
+        self.xmlpdf = self.init()
 
     def read_lines(self, raw=False):
+        if raw:
+            return self.xmlpdf.raw_texts
+        return self.xmlpdf.texts
+
+    def init(self):
         xml_Path = self.pdf2xml()
         self.pdf2img()
         xmlpdf = XMLPDF(xml_Path)
-        if raw:
-            return xmlpdf.raw_texts
-        return xmlpdf.texts
+        return xmlpdf
 
     def __del__(self):
         self.tempdir.cleanup()
 
-    def pixelize(self):
-        pass
+    def __repr__(self):
+        return '[<PDF file> Pages: {}]'.format(len(self.xmlpdf))
+
+    def __getitem__(self, page_num):
+        """
+        return image_path and text data of each page
+
+        input:
+            - page_num(int): index of page
+
+        """
+        page_num -= 1
+        try:
+            page = self.xmlpdf.pages[page_num]
+            texts_in_page = self.xmlpdf._extract_text(page)
+            images = self._get_images()
+            image = images[page_num]
+        except IndexError:
+            raise PageNotFoundError('This page number [{}] is out of range. Select from 1 <= page < {} for this document.'.format(page_num, len(self.xmlpdf)))
+        return texts_in_page, image
 
     def pdf2xml(self):
         output_path = os.path.join(self.tempdir.name, self.document_Path.stem + '.xml')
@@ -47,10 +74,13 @@ class Pdf(basedoc.Basedoc):
         output_path = os.path.join(self.tempdir.name, self.document_Path.stem)
         cmd = 'pdftocairo -png {} {}'.format(str(self.document_Path), output_path)
         subprocess.call(cmd, shell=True)
-        set_trace()
 
     def _validate_Path(self, path):
         return Path(path)
+
+    def _get_images(self):
+        images = sorted(glob.glob(os.path.join(self.tempdir.name, '*.png')))
+        return images
 
 
 class XMLPDF(object):
@@ -64,38 +94,59 @@ class XMLPDF(object):
     def __init__(self, xml_Path):
         self.xml_Path = xml_Path
         self.dictpdf = xmltodict.parse(self._load_xml(xml_Path))
-        self._extract_page()
-        self._extract_text()
+        self._extract_pages()
+        self._extract_texts()
+
+    # TODO: parse to dict
+    @property
+    def pages(self):
+        return self._pages
+
+    @property
+    def texts(self):
+        return self._texts
+
+    @property
+    def raw_texts(self):
+        return self._raw_texts
 
     def _load_xml(self, xml_Path):
         with open(str(xml_Path), 'r') as f:
             xml = f.read()
         return xml
 
-    def __getitem__(self, idx):
-        pass
-
     def __len__(self):
-        pass
+        return len(self.pages)
 
     def __repr__(self):
         return str(self.dictpdf)
 
-    def _extract_page(self):
+    def _extract_pages(self):
         self._pages = self.dictpdf['pdf2xml']['page']
 
-    def _extract_text(self):
-        p_texts = [x['text'] for x in self.pages if 'text' in x.keys()]
+    def _extract_texts(self):
         _texts = list()
         _raw_texts = list()
-        for pt in p_texts:
-            _texts.extend([{
-                'boundingPoly': self._get_poly(t),
-                'description': t['#text']
-            } for t in pt if '#text' in t.keys()])
-            _raw_texts.extend([t['#text'] for t in pt if '#text' in t.keys()])
+        for page in self.pages:
+            _texts.extend(self._extract_text(page))
+            _raw_texts.extend(self._extract_raw_text(page))
         self._texts = _texts
         self._raw_texts = _raw_texts
+
+    def _extract_text(self, page):
+        if 'text' not in page.keys():
+            return None
+        texts_in_page = [{
+            'boundingPoly': self._get_poly(t),
+            'description': t['#text']
+        } for t in page['text'] if '#text' in t.keys()]
+        return texts_in_page
+
+    def _extract_raw_text(self, page):
+        if 'text' not in page.keys():
+            return None
+        raw_texts_in_page = [t['#text'] for t in page['text'] if '#text' in t.keys()]
+        return raw_texts_in_page
 
     def _get_poly(self, t):
         left = int(t['@left'])
@@ -122,18 +173,6 @@ class XMLPDF(object):
                         }
                     ]}
 
-    # TODO: parse to dict
-    @property
-    def pages(self):
-        return self._pages
-
-    @property
-    def texts(self):
-        return self._texts
-
-    @property
-    def raw_texts(self):
-        return self._raw_texts
 
 
 if __name__ == '__main__':
@@ -141,3 +180,4 @@ if __name__ == '__main__':
     pdf = Pdf(document_Path)
     texts = pdf.read_lines()
     print(texts)
+    print(pdf[26])
