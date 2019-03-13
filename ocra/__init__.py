@@ -1,4 +1,4 @@
-from ocra.acceptor import DocAcceptor
+from ocra.acceptor import Document
 import ocra.typedocs
 
 

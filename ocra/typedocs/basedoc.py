@@ -2,7 +2,6 @@
 """
 """
 from abc import abstractmethod, ABCMeta
-from pathlib import Path
 
 
 class Basedoc(object, metaclass=ABCMeta):
@@ -12,17 +11,16 @@ class Basedoc(object, metaclass=ABCMeta):
     """
 
     @abstractmethod
-    def read_lines(self, document_Path: Path):
+    def read_lines(self):
         """
         This method have to have the features below.
             - load document from document_Path
             - recognize each lines
-            - get words in each lines and coordinate from docs 
+            - get words in each lines and coordinate from docs
             - return list which includs words and coordinate of each lines
 
         Input
         ----------
-            - document_Path (Path): document Path 
+            - document_Path (Path): document Path
         """
         pass
-

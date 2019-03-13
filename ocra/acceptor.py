@@ -1,16 +1,16 @@
 # -*- coding: utf-8 -*-
 """
 """
-import os
-import sys
 from pathlib import Path
 
 
 from ocra.exceptions import ExtensionNotAvailableError
 import ocra
 
-class DocAcceptor(object):
+
+class Document(object):
     """
+    Check whether input file is acceptable to make OCR dataset.
 
     Args:
     """
@@ -19,16 +19,15 @@ class DocAcceptor(object):
             'txt'
             ]
 
-
     def __init__(self):
         pass
 
     @classmethod
-    def extract_document(cls, document_path):
+    def extract_text(cls, document_path):
         document_Path = cls.wrap_to_pathlib(document_path)
         cls.isFileExists(document_Path)
         ext = cls.validate_ext(cls.get_ext(document_Path))
-        return getattr(ocra.typedocs, ext.capitalize())(document_Path).read_lines()
+        return getattr(ocra.typedocs, ext.capitalize())(document_Path)
 
     @classmethod
     def validate_ext(cls, ext):
@@ -52,6 +51,7 @@ class DocAcceptor(object):
         if not document_Path.exists():
             raise FileNotFoundError()
 
+
 if __name__ == '__main__':
-    acceptor = DocAcceptor.extract_document('/home/mzntaka0/Dropbox/work/oss/ocra/tests/data/mock.txt')
-    print(acceptor)
+    acceptor = Document.extract_text('/home/mzntaka0/Dropbox/work/oss/ocra/tests/data/mock.pdf')
+    print(acceptor.read_lines())
