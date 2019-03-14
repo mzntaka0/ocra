@@ -33,6 +33,7 @@ class Pdf(basedoc.Basedoc):
             return self.xmlpdf.raw_texts
         return self.xmlpdf.texts
 
+    # TODO: This method creates a state. Gatta make it be stateless.
     def init(self):
         xml_Path = self.pdf2xml()
         self.pdf2img()
@@ -139,6 +140,7 @@ class XMLPDF(object):
     def _extract_pages(self):
         self._pages = self.dictpdf['pdf2xml']['page']
 
+    # FIXME: Error in 146('NoneType' object is not iterable.) when any texts exist in page.
     def _extract_texts(self):
         _texts = list()
         _raw_texts = list()
@@ -190,7 +192,7 @@ class XMLPDF(object):
 
 
 if __name__ == '__main__':
-    document_Path = Path('../../../../git/pdf2xml-viewer/00.pdf')
+    document_Path = Path('../../tests/data/mock.pdf')
     pdf = Pdf(document_Path)
     texts = pdf.read_lines()
     print(texts)
