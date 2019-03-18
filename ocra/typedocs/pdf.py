@@ -13,6 +13,7 @@ from ocra.typedocs import basedoc
 from ocra.exceptions import PageNotFoundError
 
 
+# TODO: Image generation from pdf should be optional.
 class Pdf(basedoc.Basedoc):
     """
     PDF object to do text extraction.
@@ -36,8 +37,9 @@ class Pdf(basedoc.Basedoc):
     # TODO: This method creates a state. Gatta make it be stateless.
     def init(self):
         xml_Path = self.pdf2xml()
-        self.pdf2img()
         xmlpdf = XMLPDF(xml_Path)
+        self.size = xmlpdf.size
+        self.pdf2img()
         return xmlpdf
 
     def __del__(self):
@@ -88,7 +90,7 @@ class Pdf(basedoc.Basedoc):
 
     def pdf2img(self):
         output_path = os.path.join(self.tempdir.name, self.document_Path.stem)
-        cmd = 'pdftocairo -png {} {}'.format(str(self.document_Path), output_path)
+        cmd = 'pdftocairo -png -scale-to-x {} -scale-to-y {} {} {}'.format(self.size[0], self.size[1], str(self.document_Path), output_path)
         subprocess.call(cmd, shell=True)
 
     def _validate_Path(self, path):
@@ -121,6 +123,11 @@ class XMLPDF(object):
     @property
     def texts(self):
         return self._texts
+
+    @property
+    def size(self):
+        x, y = int(self.pages[0]['@width']), int(self.pages[0]['@height'])
+        return x, y
 
     @property
     def raw_texts(self):
@@ -195,4 +202,3 @@ if __name__ == '__main__':
     document_Path = Path('../../tests/data/mock.pdf')
     pdf = Pdf(document_Path)
     texts = pdf.read_lines()
-    print(texts)

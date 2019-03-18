@@ -6,6 +6,7 @@ import numpy as np
 from ocra.enums import WordOrient
 
 
+# TODO: should create interface class. Otherwise the definitive image-text data class can be created.
 class TextAnnotationsParser(object):
 
     def __init__(self, textAnnotations, isRelative=True):
@@ -37,6 +38,17 @@ class TextAnnotationsParser(object):
         return coords, description
 
 
+class TextAnnotationDeparser(object):
+
+    def __init__(self, isRelative=True):
+        self.isRelative = isRelative
+
+        # TODO: Needs an implementation.
+    def __call__(self, coords, description):
+        pass
+
+
+# TODO: Consider about the name of this class to make it more comfortable.
 class AnnotatedText(object):
 
     def __init__(self, textAnnotation):
@@ -65,13 +77,13 @@ class AnnotatedText(object):
         """
         return self._relative(self._abs_coords)
 
-    # TODO: This method creates a state. Gatta make it be stateless.
+    # TODO: This method has yielded a state. Gatta make it be stateless.
     def _extract_coords(self):
         coords = self.textAnnotation['boundingPoly']['vertices']
         coords = [[p['x'], p['y']] for p in coords]
         return coords
 
-    # TODO: For now this is dependent on gocr's response. Check whether it is general or not.(gocr define coords[0] as top left of words.)
+    # TODO: For now this is dependent on gocr's response. Check whether it is general or not.(gocr defines coords[0] as the top-left of words.)
     def _recognize_orientation(self, coords):
         np_coords = np.array(coords)
         topleft = np_coords.sum(axis=1).argmin()
@@ -94,10 +106,19 @@ class AnnotatedText(object):
 
 if __name__ == '__main__':
     import ocra
+    from PIL import Image
+    import cv2
+    import numpy as np
+
     document = ocra.Document.load('/home/mzntaka0/Dropbox/work/oss/ocra/tests/data/mock.pdf')
     texts, image = document[1]
-    print(texts)
+    image = Image.open(image).convert('L')
+    image = np.asarray(image).astype(np.uint8)
     text = AnnotatedText(texts[0])
-    parser = TextAnnotationsParser(texts)
+    parser = TextAnnotationsParser(texts, isRelative=False)
     for coords, description in parser:
+        x_min, y_min = coords[0]
+        x_max, y_max = coords[1]
+        cv2.rectangle(image, (x_min, y_min), (x_max, y_max), color=(0, 0, 255))
         print(coords, description)
+    cv2.imwrite('rect.png', image)
