@@ -61,7 +61,7 @@ class AnnotatedText(object):
         """
         Return description.
         """
-        return self.textAnnotation['description']
+        return self.textAnnotation.get('description', None)
 
     @property
     def absolute(self):
@@ -108,7 +108,6 @@ if __name__ == '__main__':
     import ocra
     from PIL import Image
     import cv2
-    import numpy as np
 
     document = ocra.Document.load('/home/mzntaka0/Dropbox/work/oss/ocra/tests/data/mock.pdf')
     texts, image = document[1]
