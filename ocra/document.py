@@ -14,9 +14,9 @@ class Document(object):
     Args:
     """
     available_ext = [
-            'pdf',
-            'txt'
-            ]
+        'pdf',
+        'txt'
+    ]
 
     def __init__(self):
         pass
@@ -32,8 +32,11 @@ class Document(object):
     def validate_ext(cls, ext):
         if ext not in cls.available_ext:
             raise ExtensionNotAvailableError(
-                    'This extension {} is not available. Select from {}'.format(cls.available_ext)
-                    )
+                'This extension {} is not available. Select from {}'.format(
+                    ext,
+                    cls.available_ext,
+                )
+            )
         else:
             return ext
 
